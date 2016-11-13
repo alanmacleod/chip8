@@ -6,9 +6,8 @@ export default class RAM extends Base
   constructor()
   {
     super();
-    this._raw_data = new ArrayBuffer(0x1000);
-    this.data = new Uint8Array(this._raw_data);
-    this._this = "RAM";
+    this._data = new ArrayBuffer(0x1000);
+    this.data = new Uint8Array(this._data);
   }
 
   reset()
