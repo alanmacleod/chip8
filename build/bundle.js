@@ -60,9 +60,9 @@
 	  console.log("\n", data.error, "\n");
 	});
 
-	c.load('rom/json/pong.json');
-
-	c.start();
+	c.load('rom-json/pong.json', function () {
+	  c.start();
+	});
 
 /***/ },
 /* 1 */
@@ -92,6 +92,10 @@
 
 	var _loader2 = _interopRequireDefault(_loader);
 
+	var _gfx = __webpack_require__(9);
+
+	var _gfx2 = _interopRequireDefault(_gfx);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -110,13 +114,15 @@
 
 	    _this.cpu = new _cpu2.default();
 	    _this.ram = new _ram2.default();
+	    _this.gfx = new _gfx2.default();
 
 	    _this.ram.on('gpf', function (data) {
 	      this.emit('error', data);
-	    }.bind(_this));
+	    }.bind(_this)); // Override 'this' to use Chip8() context instead of RAM()'s
 
 	    _this.cpu.on('opcode', function (data) {
 	      this.emit('error', data);
+	      this.cpu._debug_dump_registers();
 	    }.bind(_this));
 
 	    _this.reset();
@@ -129,7 +135,7 @@
 	    value: function start() {
 	      this._executing = true;
 
-	      this.ram.writeWord(512, 0x8124); // 8xy0 -> MOV Vx, Vy
+	      //TODO: requestAnimationFrame or setTimeout() here, "while()" locks-up browsers!
 
 	      while (this._executing) {
 	        this.cpu.execute(this.cpu.decode(this.cpu.fetch(this.ram)));
@@ -143,15 +149,32 @@
 	    }
 	  }, {
 	    key: 'load',
-	    value: function load(url) {
+	    value: function load(url, callback) {
+	      var _this2 = this;
+
 	      var l = new _loader2.default();
 
 	      console.log("Loading ROM: " + url);
 
 	      l.load(url, function (data) {
+	        console.log('Loading title \'' + data.title + '\'');
 
-	        console.log(data);
+	        var buffer = _this2._base64ToArrayBuffer(data.binary);
+	        _this2.ram.blit(buffer, 512);
+
+	        callback();
 	      });
+	    }
+	  }, {
+	    key: '_base64ToArrayBuffer',
+	    value: function _base64ToArrayBuffer(base64) {
+	      var binary_string = window.atob(base64);
+	      var len = binary_string.length;
+
+	      var bytes = new Uint8Array(len);
+	      for (var i = 0; i < len; i++) {
+	        bytes[i] = binary_string.charCodeAt(i);
+	      }return bytes;
 	    }
 	  }, {
 	    key: 'reset',
@@ -373,6 +396,12 @@
 	      this.exec[major].call(this, { major: major, minor: minor });
 	      this.next();
 	    }
+	  }, {
+	    key: '_debug_dump_registers',
+	    value: function _debug_dump_registers() {
+	      console.log("==CPU REGISTER DUMP==");
+	      console.log(this.reg);
+	    }
 	  }]);
 
 	  return CPU;
@@ -399,27 +428,39 @@
 	notimp, // 0x3???
 	notimp, // 0x4???
 	notimp, // 0x5???
-	notimp, // 0x6???
-	notimp, // 0x7???
-
-	function (_ref) // 0x8
+	function (_ref) // 0x6xx
 	{
 	  var major = _ref.major,
 	      minor = _ref.minor;
 
+	  this.reg.v[minor >> 8 & 0xf] = minor & 0xff;
+	  console.log('mov v' + (minor >> 8 & 0xf).toString(16) + ', ' + (minor & 0xff));
+	}, notimp, // 0x7???
+
+	function (_ref2) // 0x8
+	{
+	  var major = _ref2.major,
+	      minor = _ref2.minor;
+
 	  _opcode0x.$_instr_0x8[minor & 0xf].call(this, { major: major, minor: minor });
 	}, notimp, // 0x9???
-	notimp, // 0xA???
-	notimp, // 0xB???
+	function (_ref3) // 0xAnnn: mvi nnn (load 'I' with nnn)
+	{
+	  var major = _ref3.major,
+	      minor = _ref3.minor;
+
+	  this.reg.i = minor & 0xfff;
+	  console.log('mvi ' + (minor & 0xfff));
+	}, notimp, // 0xB???
 	notimp, // 0xC???
 	notimp, // 0xD???
 	notimp, // 0xE???
 	notimp // 0xF???
 	];
 
-	function notimp(_ref2) {
-	  var major = _ref2.major,
-	      minor = _ref2.minor;
+	function notimp(_ref4) {
+	  var major = _ref4.major,
+	      minor = _ref4.minor;
 
 	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] Illegal/Unimplemented instruction: 0x' + major.toString(16) + minor.toString(16) });
 	}
@@ -511,6 +552,11 @@
 	      this.data[addr + 1] = data & 0xff;
 	    }
 	  }, {
+	    key: 'blit',
+	    value: function blit(typedArray, toAddr) {
+	      this.data.set(typedArray, toAddr);
+	    }
+	  }, {
 	    key: '_validate_address',
 	    value: function _validate_address(addr) {
 	      //TODO: Handle execution halt
@@ -571,6 +617,58 @@
 	}();
 
 	exports.default = Loader;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _base = __webpack_require__(2);
+
+	var _base2 = _interopRequireDefault(_base);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var WIDTH = 64,
+	    HEIGHT = 32;
+
+	var GFX = function (_Base) {
+	  _inherits(GFX, _Base);
+
+	  function GFX() {
+	    _classCallCheck(this, GFX);
+
+	    var _this = _possibleConstructorReturn(this, (GFX.__proto__ || Object.getPrototypeOf(GFX)).call(this));
+
+	    _this._display = new ArrayBuffer(WIDTH * HEIGHT);
+	    _this.display = new Uint8Array(_this._display);
+	    return _this;
+	  }
+
+	  _createClass(GFX, [{
+	    key: 'clear',
+	    value: function clear() {
+	      this.display.fill(0);
+	    }
+	  }]);
+
+	  return GFX;
+	}(_base2.default);
+
+	exports.default = GFX;
 
 /***/ }
 /******/ ]);

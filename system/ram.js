@@ -48,9 +48,6 @@ export default class RAM extends Base
 
   _validate_address(addr)
   {
-    //TODO: Handle execution halt
-    //TODO: Memory map?
-
     if (addr < 0x200)
     {
       this.emit('gpf', {error: `Illegal address: 0x${addr.toString(16)}`});

@@ -3,6 +3,7 @@ import Base               from './util/base';
 import CPU                from './system/cpu/cpu';
 import RAM                from './system/ram';
 import Loader             from './util/loader';
+import GFX                from './system/gfx';
 
 export default class Chip8 extends Base
 {
@@ -10,12 +11,13 @@ export default class Chip8 extends Base
   {
     super();
 
-    this.cpu = new CPU();
     this.ram = new RAM();
+    this.gfx = new GFX(this.ram);
+    this.cpu = new CPU(this.gfx);
 
     this.ram.on('gpf', (function(data) {
       this.emit('error', data);
-    }).bind(this));
+    }).bind(this)); // Override 'this' to use Chip8() context instead of RAM()'s
 
     this.cpu.on('opcode', (function(data) {
       this.emit('error', data);

@@ -7,10 +7,11 @@ const IP_INIT = 0x200; // = 512. Bytes 0-511 reserved for built-in interpreter
 
 export default class CPU extends Base
 {
-  constructor()
+  constructor(gfx)
   {
     super();
     this._this = "CPU"; // for context debugging
+    this.gfx = gfx;
 
     this.reg = {
       v: [],
@@ -22,6 +23,7 @@ export default class CPU extends Base
       get sp() {return this._sp},
     };
 
+    this.stack = []
     this.exec = opcodes;
   }
 
@@ -51,8 +53,8 @@ export default class CPU extends Base
 
   execute({major, minor})
   {
-    this.exec[major].call(this, {major, minor});
-    this.next();
+    if (!this.exec[major].call(this, {major, minor}))
+        this.next();
   }
 
   _debug_dump_registers()
