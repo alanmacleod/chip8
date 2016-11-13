@@ -1,6 +1,6 @@
 
 import Chip8 from './chip8';
-console.log("omg my name is DAVE");
+console.log("CHIP8 Virtual Machine init()");
 let c = new Chip8();
 
 c.on('error', (data) => {
@@ -8,5 +8,6 @@ c.on('error', (data) => {
   console.log("\n",data.error,"\n");
 })
 
-c.load('./rom.rom');
-c.start();
+c.load('rom-json/pong.json', () => {
+    c.start();
+});

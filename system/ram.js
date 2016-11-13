@@ -41,6 +41,11 @@ export default class RAM extends Base
     this.data[addr+1] = (data & 0xff);
   }
 
+  blit(typedArray, toAddr)
+  {
+    this.data.set(typedArray, toAddr);
+  }
+
   _validate_address(addr)
   {
     //TODO: Handle execution halt

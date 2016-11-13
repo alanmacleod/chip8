@@ -52,7 +52,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	console.log("HELLO HELLO HELLO TEST TREST TESTASDASDASDASD asdasd");
+	console.log("CHIP8 Virtual Machine init()");
 	var c = new _chip2.default();
 
 	c.on('error', function (data) {
@@ -60,7 +60,8 @@
 	  console.log("\n", data.error, "\n");
 	});
 
-	c.load('./rom.rom');
+	c.load('rom/json/pong.json');
+
 	c.start();
 
 /***/ },
@@ -86,6 +87,10 @@
 	var _ram = __webpack_require__(7);
 
 	var _ram2 = _interopRequireDefault(_ram);
+
+	var _loader = __webpack_require__(8);
+
+	var _loader2 = _interopRequireDefault(_loader);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -138,9 +143,15 @@
 	    }
 	  }, {
 	    key: 'load',
-	    value: function load(rom) {
-	      // load cartridge rom into ram
+	    value: function load(url) {
+	      var l = new _loader2.default();
 
+	      console.log("Loading ROM: " + url);
+
+	      l.load(url, function (data) {
+
+	        console.log(data);
+	      });
 	    }
 	  }, {
 	    key: 'reset',
@@ -519,6 +530,47 @@
 	}(_base2.default);
 
 	exports.default = RAM;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Loader = function () {
+	  function Loader() {
+	    _classCallCheck(this, Loader);
+	  }
+
+	  _createClass(Loader, [{
+	    key: "load",
+	    value: function load(url, fn) {
+	      var xmlhttp = new XMLHttpRequest();
+
+	      xmlhttp.onreadystatechange = function () {
+	        if (this.readyState == 4 && this.status == 200) {
+	          var myArr = JSON.parse(this.responseText);
+	          fn(myArr);
+	        }
+	      };
+
+	      xmlhttp.open("GET", url, true);
+	      xmlhttp.send();
+	    }
+	  }]);
+
+	  return Loader;
+	}();
+
+	exports.default = Loader;
 
 /***/ }
 /******/ ]);
