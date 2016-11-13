@@ -49,6 +49,7 @@ export default class Chip8 extends Base
   load(rom)
   {
     // load cartridge rom into ram
+
   }
 
   reset()

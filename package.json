@@ -4,7 +4,8 @@
   "description": "",
   "main": "core.js",
   "scripts": {
-    "dev": "node ./build/bundle.js"
+    "olddev": "node ./build/bundle.js",
+    "dev": "webpack-dev-server --content-base build --inline"
   },
   "author": "",
   "license": "ISC",

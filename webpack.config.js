@@ -1,14 +1,18 @@
 module.exports = [
     {
+      node: {
+        fs: "empty"
+      },
         entry: './main.js',
         output: {
-            filename: './build/bundle.js'
+            path: './build',
+            filename: 'bundle.js'
         },
         module: {
             loaders: [
                 {
                     test: /\.js$/,
-                    exclude: /(node_modules)/,
+                    /* exclude: /(node_modules)/,*/
                     loader: 'babel-loader',
                     query: {
                         presets: ['es2015']

@@ -52,6 +52,7 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	console.log("HELLO HELLO HELLO TEST TREST TESTASDASDASDASD asdasd");
 	var c = new _chip2.default();
 
 	c.on('error', function (data) {
@@ -86,10 +87,6 @@
 
 	var _ram2 = _interopRequireDefault(_ram);
 
-	var _fs = __webpack_require__(8);
-
-	var _fs2 = _interopRequireDefault(_fs);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -105,8 +102,6 @@
 	    _classCallCheck(this, Chip8);
 
 	    var _this = _possibleConstructorReturn(this, (Chip8.__proto__ || Object.getPrototypeOf(Chip8)).call(this));
-
-	    console.log(_fs2.default);
 
 	    _this.cpu = new _cpu2.default();
 	    _this.ram = new _ram2.default();
@@ -524,12 +519,6 @@
 	}(_base2.default);
 
 	exports.default = RAM;
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	"use strict";
 
 /***/ }
 /******/ ]);
