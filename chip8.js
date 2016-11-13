@@ -29,7 +29,9 @@ export default class Chip8 extends Base
   start()
   {
     this._executing = true;
+
     //TODO: requestAnimationFrame or setTimeout() here, "while()" locks-up browsers!
+
     while(this._executing)
     {
        this.cpu.execute(
