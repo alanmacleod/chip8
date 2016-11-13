@@ -9,7 +9,12 @@ export let opcodes = [
   notimp,  // 0x3???
   notimp,  // 0x4???
   notimp,  // 0x5???
-  notimp,  // 0x6???
+  function ({major, minor}) // 0x6xx
+  {
+    this.reg.v[(minor>>8)&0xf] = minor & 0xff;
+    console.log(`mov v${((minor>>8)&0xf).toString(16)}, ${minor & 0xff}`);
+  },
+
   notimp,  // 0x7???
 
   function({major, minor}) // 0x8
@@ -18,7 +23,12 @@ export let opcodes = [
   },
 
   notimp,  // 0x9???
-  notimp,  // 0xA???
+  function({major, minor}) // 0xAnnn: mvi nnn (load 'I' with nnn)
+  {
+    this.reg.i = minor & 0xfff;
+    console.log(`mvi ${minor & 0xfff}`);
+
+  },
   notimp,  // 0xB???
   notimp,  // 0xC???
   notimp,  // 0xD???

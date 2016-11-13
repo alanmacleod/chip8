@@ -55,5 +55,11 @@ export default class CPU extends Base
     this.next();
   }
 
+  _debug_dump_registers()
+  {
+    console.log("==CPU REGISTER DUMP==")
+    console.log(this.reg);
+  }
+
 
 }

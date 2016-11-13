@@ -19,6 +19,7 @@ export default class Chip8 extends Base
 
     this.cpu.on('opcode', (function(data) {
       this.emit('error', data);
+      this.cpu._debug_dump_registers();
     }).bind(this));
 
     this.reset();
@@ -28,7 +29,7 @@ export default class Chip8 extends Base
   start()
   {
     this._executing = true;
-
+    //TODO: requestAnimationFrame or setTimeout() here, "while()" locks-up browsers!
     while(this._executing)
     {
        this.cpu.execute(
@@ -69,9 +70,7 @@ export default class Chip8 extends Base
 
     var bytes = new Uint8Array( len );
     for (var i = 0; i < len; i++)
-    {
         bytes[i] = binary_string.charCodeAt(i);
-    }
 
     return bytes;
   }
