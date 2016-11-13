@@ -28,10 +28,10 @@ export default class GFX extends Base
       let pixel, xor_pixel;
       for (let x=SPRITE_WIDTH; x>=0; x--)
       {
-        pixel = ((bit_row >> x) & 0x1);
+        pixel = ((bit_row >> x) & 0x1);    //TODO: *MUST* be a smarter way to write this!!
         xor_pixel = this.ram[o] ^ pixel;
         this.ram[o++] = xor_pixel;
-        collision = (xor_pixel!=pixel) ? 1:0;
+        if (xor_pixel!=pixel) collision = 1;
       }
       o += d;
     }
