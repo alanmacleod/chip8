@@ -86,6 +86,10 @@
 
 	var _ram2 = _interopRequireDefault(_ram);
 
+	var _fs = __webpack_require__(8);
+
+	var _fs2 = _interopRequireDefault(_fs);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -101,6 +105,8 @@
 	    _classCallCheck(this, Chip8);
 
 	    var _this = _possibleConstructorReturn(this, (Chip8.__proto__ || Object.getPrototypeOf(Chip8)).call(this));
+
+	    console.log(_fs2.default);
 
 	    _this.cpu = new _cpu2.default();
 	    _this.ram = new _ram2.default();
@@ -139,6 +145,7 @@
 	    key: 'load',
 	    value: function load(rom) {
 	      // load cartridge rom into ram
+
 	    }
 	  }, {
 	    key: 'reset',
@@ -517,6 +524,12 @@
 	}(_base2.default);
 
 	exports.default = RAM;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	"use strict";
 
 /***/ }
 /******/ ]);
