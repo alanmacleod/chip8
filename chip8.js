@@ -28,7 +28,7 @@ export default class Chip8 extends Base
     this._executing = false;
   }
 
-  start()
+  poweron()
   {
     this._executing = true;
 
@@ -44,7 +44,7 @@ export default class Chip8 extends Base
     }
   }
 
-  stop()
+  halt()
   {
     console.log("Halting execution...");
     this._executing = false;
