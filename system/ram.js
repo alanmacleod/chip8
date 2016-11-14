@@ -1,11 +1,15 @@
 
 import Base from '../util/base';
 
+const BIOS_CHAR_BASE_ADDR = 0x0;
+const BIOS_CHAR_SIZE = 5;
+
 export default class RAM extends Base
 {
   constructor()
   {
     super();
+    this._this = "RAM";
     this._data = new ArrayBuffer(0x1000);
     this.data = new Uint8Array(this._data);
   }
@@ -13,6 +17,16 @@ export default class RAM extends Base
   reset()
   {
     //this.data = new Array(0x1000).fill(0);
+  }
+
+  getCharAddrBIOS()
+  {
+    return BIOS_CHAR_BASE_ADDR;
+  }
+
+  getCharSizeBIOS()
+  {
+    return BIOS_CHAR_SIZE;
   }
 
   readByte(addr)
@@ -42,6 +56,7 @@ export default class RAM extends Base
 
   blit(typedArray, toAddr)
   {
+    // Bypass address validation here so we can blit the bios into place
     this.data.set(typedArray, toAddr);
   }
 

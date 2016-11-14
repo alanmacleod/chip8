@@ -2,16 +2,24 @@
 import Base from '../../util/base';
 import {opcodes} from './opcodes';
 
+import DelayTimer         from '../timer-delay';
+
 const WORD_SIZE = 2; // 16-bit instruction
 const IP_INIT = 0x200; // = 512. Bytes 0-511 reserved for built-in interpreter
 
 export default class CPU extends Base
 {
-  constructor(gfx)
+  constructor(gfx, ram)
   {
     super();
     this._this = "CPU"; // for context debugging
     this.gfx = gfx;
+    this.ram = ram;
+
+    // I feel like this should be part of the Chip8() object/system instead of
+    // in here but the delay timer appears to be only accessed or used directly
+    // by the CPU so whatever
+    this.delayTimer = new DelayTimer();
 
     this.reg = {
       v: [],
@@ -38,9 +46,9 @@ export default class CPU extends Base
     this.reg._ip += WORD_SIZE;
   }
 
-  fetch(ram)
+  fetch()
   {
-    return ram.readWord(this.reg.ip);
+    return this.ram.readWord(this.reg.ip);
   }
 
   decode(instr)

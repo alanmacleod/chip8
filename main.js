@@ -1,10 +1,12 @@
 
 import Chip8 from './chip8';
 
-console.log("CHIP-8 Virtual Machine v0.1");
+console.log(`CHIP-8 Virtual Machine`);
 
+let canvas = document.getElementById('display');
+let c = new Chip8(canvas);
 
-let c = new Chip8();
+window.console = {log: function(){}}
 
 c.on('error', (data) => {
 
@@ -13,8 +15,8 @@ c.on('error', (data) => {
 
 })
 
-c.load('rom-json/pong.json', () => {    // insert the cartridge :)
+c.load('rom-json/pong.json', () => {    // insert the cartridge...
 
-    c.poweron();                        // switch it on!
+    c.poweron();                        // switch it on :)
 
 });

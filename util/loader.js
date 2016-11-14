@@ -13,8 +13,8 @@ export default class Loader
 
     xmlhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            var myArr = JSON.parse(this.responseText);
-            fn(myArr);
+            var json = JSON.parse(this.responseText);
+            fn(json);
         }
     };
 

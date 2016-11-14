@@ -4,16 +4,22 @@ import CPU                from './system/cpu/cpu';
 import RAM                from './system/ram';
 import Loader             from './util/loader';
 import GFX                from './system/gfx';
+import Renderer           from './dom/renderer';
+
+const BIOS_URL = "./bios.json";
 
 export default class Chip8 extends Base
 {
-  constructor()
+  constructor(displayElement)
   {
     super();
 
     this.ram = new RAM();
-    this.gfx = new GFX(this.ram);
-    this.cpu = new CPU(this.gfx);
+    this.gfx = new GFX(this.ram.data);
+    this.cpu = new CPU(this.gfx, this.ram);
+    this.renderer = new Renderer(displayElement, this.gfx.display, this.gfx.size(), 20);
+
+    this.loader = new Loader();
 
     this.ram.on('gpf', (function(data) {
       this.emit('error', data);
@@ -24,24 +30,40 @@ export default class Chip8 extends Base
       this.cpu._debug_dump_registers();
     }).bind(this));
 
+    this.gfx.on('changed', (function() {
+        this.renderer.Dirty();
+    }).bind(this));
+
     this.reset();
+    this._init_bios();
     this._executing = false;
   }
 
+  frame()
+  {
+    if (!this._executing) return;
+
+    for (let t=0; t<10; t++)
+    {
+      //if (!this._executing) return;
+       this.cpu.execute(
+         this.cpu.decode(
+           this.cpu.fetch()
+         )
+       );
+    }
+
+    this.renderer.Render();
+
+    window.requestAnimationFrame((this.frame).bind(this));
+  }
   poweron()
   {
     this._executing = true;
 
-    //TODO: requestAnimationFrame or setTimeout() here, "while()" locks-up browsers!
+    window.requestAnimationFrame((this.frame).bind(this));
 
-    while(this._executing)
-    {
-       this.cpu.execute(
-         this.cpu.decode(
-           this.cpu.fetch(this.ram)
-         )
-       );
-    }
+
   }
 
   halt()
@@ -52,11 +74,9 @@ export default class Chip8 extends Base
 
   load(url, callback)
   {
-    let l = new Loader();
+    console.log(`Fetching: '${url}'`);
 
-    console.log("Loading ROM: "+url);
-
-    l.load(url, (data) => {
+    this.loader.load(url, (data) => {
       console.log(`Loading title '${data.title}'`);
 
       let buffer = this._base64ToArrayBuffer(data.binary);
@@ -64,6 +84,24 @@ export default class Chip8 extends Base
 
       callback();
 
+    });
+  }
+
+  _init_bios()
+  {
+    // Load the "BIOS" characters into the protected area
+
+    this.loader.load(BIOS_URL, (bios_data) => {
+
+      let bytes = bios_data.bin.split(',');
+      let _data = new ArrayBuffer(bytes.length);
+      let data = new Uint8Array(_data);
+      let p = 0;
+
+      for (let charline of bytes)
+        data[p++] = (parseInt("0x"+charline, 16) & 0xff);
+
+      this.ram.blit(data, this.ram.getCharAddrBIOS());
     });
 
   }
@@ -83,8 +121,6 @@ export default class Chip8 extends Base
   {
     this.cpu.reset();
     this.ram.reset();
-
-
   }
 
 }
