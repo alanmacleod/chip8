@@ -1,4 +1,5 @@
 
+import log                from 'loglevel';
 
 export default class Renderer
 {
@@ -14,7 +15,7 @@ export default class Renderer
 
     this.renderContext = this.element.getContext("2d");
 
-    console.log(`Video size ${this.video.length} bytes, width: ${this.dim.width}, height: ${this.dim.height}`);
+    log.debug(`Video size ${this.video.length} bytes, width: ${this.dim.width}, height: ${this.dim.height}`);
     this.element.width = this.dim.width;
     this.element.height = this.dim.height;
 

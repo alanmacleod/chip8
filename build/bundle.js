@@ -57,6 +57,8 @@
 	var canvas = document.getElementById('display');
 	var c = new _chip2.default(canvas);
 
+	///window.console = {log: function(){}}
+
 	c.on('error', function (data) {
 
 	    c.halt();
@@ -89,21 +91,29 @@
 
 	var _cpu2 = _interopRequireDefault(_cpu);
 
-	var _ram = __webpack_require__(9);
+	var _ram = __webpack_require__(11);
 
 	var _ram2 = _interopRequireDefault(_ram);
 
-	var _loader = __webpack_require__(10);
+	var _loader = __webpack_require__(12);
 
 	var _loader2 = _interopRequireDefault(_loader);
 
-	var _gfx = __webpack_require__(11);
+	var _gfx = __webpack_require__(13);
 
 	var _gfx2 = _interopRequireDefault(_gfx);
 
-	var _renderer = __webpack_require__(12);
+	var _renderer = __webpack_require__(14);
 
 	var _renderer2 = _interopRequireDefault(_renderer);
+
+	var _input = __webpack_require__(15);
+
+	var _input2 = _interopRequireDefault(_input);
+
+	var _loglevel = __webpack_require__(6);
+
+	var _loglevel2 = _interopRequireDefault(_loglevel);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -123,6 +133,8 @@
 
 	    var _this = _possibleConstructorReturn(this, (Chip8.__proto__ || Object.getPrototypeOf(Chip8)).call(this));
 
+	    _loglevel2.default.setLevel('info');
+
 	    _this.ram = new _ram2.default();
 	    _this.gfx = new _gfx2.default(_this.ram.data);
 	    _this.cpu = new _cpu2.default(_this.gfx, _this.ram);
@@ -140,7 +152,7 @@
 	    }.bind(_this));
 
 	    _this.gfx.on('changed', function () {
-	      this.renderer.Render();
+	      this.renderer.Dirty();
 	    }.bind(_this));
 
 	    _this.reset();
@@ -150,15 +162,25 @@
 	  }
 
 	  _createClass(Chip8, [{
+	    key: 'frame',
+	    value: function frame() {
+	      if (!this._executing) return;
+
+	      for (var t = 0; t < 10; t++) {
+	        if (!this._executing) return;
+	        this.cpu.execute(this.cpu.decode(this.cpu.fetch()));
+	      }
+
+	      this.renderer.Render();
+
+	      window.requestAnimationFrame(this.frame.bind(this));
+	    }
+	  }, {
 	    key: 'poweron',
 	    value: function poweron() {
 	      this._executing = true;
 
-	      //TODO: requestAnimationFrame or setTimeout() here, "while()" locks-up browsers!
-
-	      while (this._executing) {
-	        this.cpu.execute(this.cpu.decode(this.cpu.fetch()));
-	      }
+	      window.requestAnimationFrame(this.frame.bind(this));
 	    }
 	  }, {
 	    key: 'halt',
@@ -378,7 +400,7 @@
 
 	var _opcodes = __webpack_require__(5);
 
-	var _timerDelay = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"../system/timer-delay\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+	var _timerDelay = __webpack_require__(10);
 
 	var _timerDelay2 = _interopRequireDefault(_timerDelay);
 
@@ -490,11 +512,17 @@
 	});
 	exports.opcodes = undefined;
 
-	var _opcode0x = __webpack_require__(6);
+	var _loglevel = __webpack_require__(6);
 
-	var _opcode0x2 = __webpack_require__(7);
+	var _loglevel2 = _interopRequireDefault(_loglevel);
 
-	var _opcode0xF = __webpack_require__(8);
+	var _opcode0x = __webpack_require__(7);
+
+	var _opcode0x2 = __webpack_require__(8);
+
+	var _opcode0xF = __webpack_require__(9);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	var opcodes = exports.opcodes = [function (_ref) // 0x0???
 	{
@@ -502,79 +530,324 @@
 	      minor = _ref.minor;
 
 	  _opcode0x.$_instr_0x0[minor & 0xff].call(this, { major: major, minor: minor });
-	}, notimp, // 0x1???
-
-	function (_ref2) // 0x2nnn: CALL nnn
+	}, function (_ref2) //0x1nnn: JMP nnn
 	{
 	  var major = _ref2.major,
 	      minor = _ref2.minor;
 
-	  console.log('-> STACK.push(0x' + this.reg.ip.toString(16) + ')');
-	  this.stack.push(this.reg.ip);
+	  _loglevel2.default.info('[' + this.reg.ip + '] jmp ' + (minor & 0xfff));
 	  this.reg._ip = minor & 0xfff;
-	  console.log('call 0x' + (minor & 0xfff).toString(16));
 	  return true;
-	}, notimp, // 0x3???
-	notimp, // 0x4???
-	notimp, // 0x5???
-
-	function (_ref3) // 0x6xnn  mov vx, nn
+	}, function (_ref3) // 0x2nnn: CALL nnn
 	{
 	  var major = _ref3.major,
 	      minor = _ref3.minor;
 
-	  this.reg.v[minor >> 8 & 0xf] = minor & 0xff;
-	  console.log('mov v' + (minor >> 8 & 0xf).toString(16) + ', ' + (minor & 0xff));
-	}, function (_ref4) // 0x7xrr add vx, rr
+	  _loglevel2.default.info('-> STACK.push(0x' + this.reg.ip.toString(16) + ')');
+	  this.stack.push(this.reg.ip);
+	  this.reg._ip = minor & 0xfff;
+	  console.log('call 0x' + (minor & 0xfff).toString(16));
+	  return true;
+	}, function (_ref4) // 0x3XRR // jump next instr if vX == RR
 	{
 	  var major = _ref4.major,
 	      minor = _ref4.minor;
 
-	  console.log('add v' + (minor >> 8 & 0xf) + ', ' + (minor & 0xff));
-	  this.reg.v[minor >> 8 & 0xf] += minor & 0xff;
-	}, function (_ref5) // 0x8
+
+	  console.log('[' + this.reg.ip + '] jeq ' + (minor >> 8 & 0xf) + ', ' + (minor & 0xff));
+	  if (this.reg.v[minor >> 8 & 0xf] == (minor & 0xff)) {
+	    console.log('-> IP += 2');
+	    this.reg._ip += 2;
+	  }
+	}, notimp, // 0x4???
+	notimp, // 0x5???
+
+	function (_ref5) // 0x6xnn  mov vx, nn
 	{
 	  var major = _ref5.major,
 	      minor = _ref5.minor;
 
-	  _opcode0x2.$_instr_0x8[minor & 0xf].call(this, { major: major, minor: minor });
-	}, notimp, // 0x9???
-	function (_ref6) // 0xAnnn: mvi nnn (load 'I' with nnn)
+	  this.reg.v[minor >> 8 & 0xf] = minor & 0xff;
+	  console.log('mov v' + (minor >> 8 & 0xf).toString(16) + ', ' + (minor & 0xff));
+	}, function (_ref6) // 0x7xrr add vx, rr
 	{
 	  var major = _ref6.major,
 	      minor = _ref6.minor;
 
-	  this.reg.i = minor & 0xfff;
-	  console.log('mvi ' + (minor & 0xfff));
-	}, notimp, // 0xB???
-	notimp, // 0xC???
-	function (_ref7) // 0xDxyn: DRW Vx, Vy, n  (draw sprite)
+	  console.log('add v' + (minor >> 8 & 0xf) + ', ' + (minor & 0xff));
+	  this.reg.v[minor >> 8 & 0xf] += minor & 0xff;
+	}, function (_ref7) // 0x8
 	{
 	  var major = _ref7.major,
 	      minor = _ref7.minor;
+
+	  _opcode0x2.$_instr_0x8[minor & 0xf].call(this, { major: major, minor: minor });
+	}, notimp, // 0x9???
+	function (_ref8) // 0xAnnn: mvi nnn (load 'I' with nnn)
+	{
+	  var major = _ref8.major,
+	      minor = _ref8.minor;
+
+	  this.reg.i = minor & 0xfff;
+	  console.log('mvi ' + (minor & 0xfff));
+	}, notimp, // 0xB???
+	function (_ref9) // 0xCxkk; rnd vx, kk
+	{
+	  var major = _ref9.major,
+	      minor = _ref9.minor;
+
+	  var rnd = Math.floor(Math.random() * 255) & (minor & 0xff);
+	  console.log('rnd v' + (minor >> 8 & 0xf) + ', ' + (minor & 0xff) + ' [' + rnd + ']');
+	  this.reg.v[minor >> 8 & 0xf] = rnd;
+	}, function (_ref10) // 0xDxyn: DRW Vx, Vy, n  (draw sprite)
+	{
+	  var major = _ref10.major,
+	      minor = _ref10.minor;
 
 	  var r = this.reg,
 	      m = minor;
 	  r.vf = this.gfx.draw(r.i, r.v[m >> 8 & 0xf], r.v[m >> 4 & 0xf], m & 0xf);
 	  console.log('drw ' + r.v[m >> 8 & 0xf] + ', ' + r.v[m >> 4 & 0xf] + ', ' + (m & 0xf));
 	}, notimp, // 0xE???
-	function (_ref8) // 0xFx??
+	function (_ref11) // 0xFx??
 	{
-	  var major = _ref8.major,
-	      minor = _ref8.minor;
+	  var major = _ref11.major,
+	      minor = _ref11.minor;
 
 	  _opcode0xF.$_instr_0xF[minor & 0xff].call(this, { major: major, minor: minor });
 	}];
 
-	function notimp(_ref9) {
-	  var major = _ref9.major,
-	      minor = _ref9.minor;
+	function notimp(_ref12) {
+	  var major = _ref12.major,
+	      minor = _ref12.minor;
 
-	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] Illegal instruction: 0x' + major.toString(16) + minor.toString(16) });
+	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] Illegal instruction: 0x' + major.toString(16) + ':' + minor.toString(16) });
 	}
 
 /***/ },
 /* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	/*
+	* loglevel - https://github.com/pimterry/loglevel
+	*
+	* Copyright (c) 2013 Tim Perry
+	* Licensed under the MIT license.
+	*/
+	(function (root, definition) {
+	    "use strict";
+
+	    if (true) {
+	        !(__WEBPACK_AMD_DEFINE_FACTORY__ = (definition), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    } else if ((typeof module === 'undefined' ? 'undefined' : _typeof(module)) === 'object' && module.exports) {
+	        module.exports = definition();
+	    } else {
+	        root.log = definition();
+	    }
+	})(undefined, function () {
+	    "use strict";
+
+	    var noop = function noop() {};
+	    var undefinedType = "undefined";
+
+	    function realMethod(methodName) {
+	        if ((typeof console === 'undefined' ? 'undefined' : _typeof(console)) === undefinedType) {
+	            return false; // We can't build a real method without a console to log to
+	        } else if (console[methodName] !== undefined) {
+	            return bindMethod(console, methodName);
+	        } else if (console.log !== undefined) {
+	            return bindMethod(console, 'log');
+	        } else {
+	            return noop;
+	        }
+	    }
+
+	    function bindMethod(obj, methodName) {
+	        var method = obj[methodName];
+	        if (typeof method.bind === 'function') {
+	            return method.bind(obj);
+	        } else {
+	            try {
+	                return Function.prototype.bind.call(method, obj);
+	            } catch (e) {
+	                // Missing bind shim or IE8 + Modernizr, fallback to wrapping
+	                return function () {
+	                    return Function.prototype.apply.apply(method, [obj, arguments]);
+	                };
+	            }
+	        }
+	    }
+
+	    // these private functions always need `this` to be set properly
+
+	    function enableLoggingWhenConsoleArrives(methodName, level, loggerName) {
+	        return function () {
+	            if ((typeof console === 'undefined' ? 'undefined' : _typeof(console)) !== undefinedType) {
+	                replaceLoggingMethods.call(this, level, loggerName);
+	                this[methodName].apply(this, arguments);
+	            }
+	        };
+	    }
+
+	    function replaceLoggingMethods(level, loggerName) {
+	        /*jshint validthis:true */
+	        for (var i = 0; i < logMethods.length; i++) {
+	            var methodName = logMethods[i];
+	            this[methodName] = i < level ? noop : this.methodFactory(methodName, level, loggerName);
+	        }
+	    }
+
+	    function defaultMethodFactory(methodName, level, loggerName) {
+	        /*jshint validthis:true */
+	        return realMethod(methodName) || enableLoggingWhenConsoleArrives.apply(this, arguments);
+	    }
+
+	    var logMethods = ["trace", "debug", "info", "warn", "error"];
+
+	    function Logger(name, defaultLevel, factory) {
+	        var self = this;
+	        var currentLevel;
+	        var storageKey = "loglevel";
+	        if (name) {
+	            storageKey += ":" + name;
+	        }
+
+	        function persistLevelIfPossible(levelNum) {
+	            var levelName = (logMethods[levelNum] || 'silent').toUpperCase();
+
+	            // Use localStorage if available
+	            try {
+	                window.localStorage[storageKey] = levelName;
+	                return;
+	            } catch (ignore) {}
+
+	            // Use session cookie as fallback
+	            try {
+	                window.document.cookie = encodeURIComponent(storageKey) + "=" + levelName + ";";
+	            } catch (ignore) {}
+	        }
+
+	        function getPersistedLevel() {
+	            var storedLevel;
+
+	            try {
+	                storedLevel = window.localStorage[storageKey];
+	            } catch (ignore) {}
+
+	            if ((typeof storedLevel === 'undefined' ? 'undefined' : _typeof(storedLevel)) === undefinedType) {
+	                try {
+	                    var cookie = window.document.cookie;
+	                    var location = cookie.indexOf(encodeURIComponent(storageKey) + "=");
+	                    if (location) {
+	                        storedLevel = /^([^;]+)/.exec(cookie.slice(location))[1];
+	                    }
+	                } catch (ignore) {}
+	            }
+
+	            // If the stored level is not valid, treat it as if nothing was stored.
+	            if (self.levels[storedLevel] === undefined) {
+	                storedLevel = undefined;
+	            }
+
+	            return storedLevel;
+	        }
+
+	        /*
+	         *
+	         * Public API
+	         *
+	         */
+
+	        self.levels = { "TRACE": 0, "DEBUG": 1, "INFO": 2, "WARN": 3,
+	            "ERROR": 4, "SILENT": 5 };
+
+	        self.methodFactory = factory || defaultMethodFactory;
+
+	        self.getLevel = function () {
+	            return currentLevel;
+	        };
+
+	        self.setLevel = function (level, persist) {
+	            if (typeof level === "string" && self.levels[level.toUpperCase()] !== undefined) {
+	                level = self.levels[level.toUpperCase()];
+	            }
+	            if (typeof level === "number" && level >= 0 && level <= self.levels.SILENT) {
+	                currentLevel = level;
+	                if (persist !== false) {
+	                    // defaults to true
+	                    persistLevelIfPossible(level);
+	                }
+	                replaceLoggingMethods.call(self, level, name);
+	                if ((typeof console === 'undefined' ? 'undefined' : _typeof(console)) === undefinedType && level < self.levels.SILENT) {
+	                    return "No console available for logging";
+	                }
+	            } else {
+	                throw "log.setLevel() called with invalid level: " + level;
+	            }
+	        };
+
+	        self.setDefaultLevel = function (level) {
+	            if (!getPersistedLevel()) {
+	                self.setLevel(level, false);
+	            }
+	        };
+
+	        self.enableAll = function (persist) {
+	            self.setLevel(self.levels.TRACE, persist);
+	        };
+
+	        self.disableAll = function (persist) {
+	            self.setLevel(self.levels.SILENT, persist);
+	        };
+
+	        // Initialize with the right level
+	        var initialLevel = getPersistedLevel();
+	        if (initialLevel == null) {
+	            initialLevel = defaultLevel == null ? "WARN" : defaultLevel;
+	        }
+	        self.setLevel(initialLevel, false);
+	    }
+
+	    /*
+	     *
+	     * Package-level API
+	     *
+	     */
+
+	    var defaultLogger = new Logger();
+
+	    var _loggersByName = {};
+	    defaultLogger.getLogger = function getLogger(name) {
+	        if (typeof name !== "string" || name === "") {
+	            throw new TypeError("You must supply a name when creating a logger.");
+	        }
+
+	        var logger = _loggersByName[name];
+	        if (!logger) {
+	            logger = _loggersByName[name] = new Logger(name, defaultLogger.getLevel(), defaultLogger.methodFactory);
+	        }
+	        return logger;
+	    };
+
+	    // Grab the current global log variable in case of overwrite
+	    var _log = (typeof window === 'undefined' ? 'undefined' : _typeof(window)) !== undefinedType ? window.log : undefined;
+	    defaultLogger.noConflict = function () {
+	        if ((typeof window === 'undefined' ? 'undefined' : _typeof(window)) !== undefinedType && window.log === defaultLogger) {
+	            window.log = _log;
+	        }
+
+	        return defaultLogger;
+	    };
+
+	    return defaultLogger;
+	});
+
+/***/ },
+/* 7 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -607,11 +880,11 @@
 	  var major = _ref2.major,
 	      minor = _ref2.minor;
 
-	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] (M-0x0) Illegal instruction: 0x' + major.toString(16) + minor.toString(16) });
+	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] (M-0x0) Illegal instruction: 0x' + major.toString(16) + ':' + minor.toString(16) });
 	}
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -629,7 +902,7 @@
 	}
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -644,19 +917,37 @@
 	// probs a smarter way to do this but oh well
 	for (var t = 0; t <= MAX_INSTR; t++) {
 	  $_instr_0xF.push($_instr_0xF_notimp);
-	}$_instr_0xF[0x29] = function (_ref) {
+	}$_instr_0xF[0x07] = function (_ref) // Fx07: read delay timer from Vx
+	{
 	  var major = _ref.major,
 	      minor = _ref.minor;
+
+	  console.log('mov v' + (minor >> 8 & 0xf) + ', dt');
+	  this.reg.v[minor >> 8 & 0xf] = this.delayTimer.get();
+	};
+
+	$_instr_0xF[0x15] = function (_ref2) // Fx15: set delay timer from Vx
+	{
+	  var major = _ref2.major,
+	      minor = _ref2.minor;
+
+	  console.log('mov dt, v' + (minor >> 8 & 0xf));
+	  this.delayTimer.set(this.reg.v[minor >> 8 & 0xf]);
+	};
+
+	$_instr_0xF[0x29] = function (_ref3) {
+	  var major = _ref3.major,
+	      minor = _ref3.minor;
 
 	  console.log('ld i, [[v' + (minor >> 8 & 0xf) + ']]');
 	  var val = this.reg.v[minor >> 8 & 0xf];
 	  this.reg.i = this.ram.getCharAddrBIOS() + this.ram.getCharSizeBIOS() * val;
 	};
 
-	$_instr_0xF[0x33] = function (_ref2) // Fx33: bcd [i], Vx (store bcd of reg Vx at address reg i->i+2)
+	$_instr_0xF[0x33] = function (_ref4) // Fx33: bcd [i], Vx (store bcd of reg Vx at address reg i->i+2)
 	{
-	  var major = _ref2.major,
-	      minor = _ref2.minor;
+	  var major = _ref4.major,
+	      minor = _ref4.minor;
 
 
 	  console.log('bcd [i], v' + (minor >> 8 & 0xf));
@@ -666,10 +957,10 @@
 	  this.ram.data[this.reg.i + 2] = v % 10;
 	};
 
-	$_instr_0xF[0x65] = function (_ref3) // Fx65: mov v0-vx, [i] (load numbers from reg.i into reg.v0 -> reg.vx)
+	$_instr_0xF[0x65] = function (_ref5) // Fx65: mov v0-vx, [i] (load numbers from reg.i into reg.v0 -> reg.vx)
 	{
-	  var major = _ref3.major,
-	      minor = _ref3.minor;
+	  var major = _ref5.major,
+	      minor = _ref5.minor;
 
 	  console.log('mov v0..v' + (minor >> 8 & 0xf) + ', [i]');
 	  for (var x = 0, mx = minor >> 8 & 0xf; x <= mx; x++) {
@@ -680,15 +971,87 @@
 	exports.$_instr_0xF = $_instr_0xF;
 
 
-	function $_instr_0xF_notimp(_ref4) {
-	  var major = _ref4.major,
-	      minor = _ref4.minor;
+	function $_instr_0xF_notimp(_ref6) {
+	  var major = _ref6.major,
+	      minor = _ref6.minor;
 
-	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] (M-0xF) Illegal instruction: 0x' + major.toString(16) + minor.toString(16) });
+	  this.fire('opcode', { error: '[ADDR 0x' + this.reg.ip.toString(16) + '] (M-0xF) Illegal instruction: 0x' + major.toString(16) + ':' + minor.toString(16) });
 	}
 
 /***/ },
-/* 9 */
+/* 10 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var FREQUENCY = 1000 / 60; // 60Hz
+
+	var DelayTimer = function () {
+	  function DelayTimer() {
+	    _classCallCheck(this, DelayTimer);
+
+	    this.counter = 0;
+	    this._timerId = null;
+	    //this._startTime = 0;
+	  }
+
+	  _createClass(DelayTimer, [{
+	    key: "set",
+	    value: function set(value) {
+	      //this._startTime = (new Date()).getTime();
+	      this.counter = value & 0xff;
+	      this._start();
+	    }
+	  }, {
+	    key: "get",
+	    value: function get(value) {
+	      //console.log(`-> DELAY.get() [=${this.counter}]`)
+	      return this.counter;
+	    }
+	  }, {
+	    key: "_start",
+	    value: function _start() {
+	      var _this = this;
+
+	      if (this._timerId) return; //already running
+	      if (window.setInterval) {
+	        this._timerId = window.setInterval(function () {
+	          //console.log("COUNTING DOWN: "+this.counter);
+	          _this.counter--;
+	          if (_this.counter == 0) {
+	            //console.log("Stopping...", this._stop, this._timerId);
+	            _this._stop();
+	          }
+	        }, FREQUENCY);
+	      }
+	    }
+	  }, {
+	    key: "_stop",
+	    value: function _stop() {
+	      // var e = (new Date()).getTime() - this._startTime;
+	      // console.log("Took "+e+" ms");
+	      if (window.clearInterval && this._timerId) {
+	        window.clearInterval(this._timerId);
+	        this._timerId = null;
+	      }
+	    }
+	  }]);
+
+	  return DelayTimer;
+	}();
+
+	exports.default = DelayTimer;
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -793,7 +1156,7 @@
 	exports.default = RAM;
 
 /***/ },
-/* 10 */
+/* 12 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -834,7 +1197,7 @@
 	exports.default = Loader;
 
 /***/ },
-/* 11 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -941,7 +1304,7 @@
 	exports.default = GFX;
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -986,11 +1349,20 @@
 	      d[_o + 2] = 0;
 	      d[_o + 3] = 255;
 	    }
+
+	    this.dirty = false;
 	  }
 
 	  _createClass(Renderer, [{
+	    key: "Dirty",
+	    value: function Dirty() {
+	      this.dirty = true;
+	    }
+	  }, {
 	    key: "Render",
 	    value: function Render() {
+	      if (!this.dirty) return;
+
 	      var o = 0;
 	      for (var y = 0; y < this.videodim.height; y++) {
 	        for (var x = 0; x < this.videodim.width; x++) {
@@ -999,6 +1371,7 @@
 	          this.renderContext.putImageData(p, this.scale * x, this.scale * y);
 	        }
 	      }
+	      this.dirty = false;
 	    }
 	  }]);
 
@@ -1006,6 +1379,55 @@
 	}();
 
 	exports.default = Renderer;
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _loglevel = __webpack_require__(6);
+
+	var _loglevel2 = _interopRequireDefault(_loglevel);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Input = function () {
+	  function Input(element) {
+	    _classCallCheck(this, Input);
+
+	    // 1 2 3 C
+	    // 4 5 6 D
+	    // 7 8 9 E
+	    // A 0 B F
+
+	    this.keyMap = ['1', '2', '3', '4', 'q', 'w', 'e', 'r', 'a', 's', 'd', 'f', 'z', 'x', 'c', 'v'];
+
+	    this._init_events(element);
+	  }
+
+	  _createClass(Input, [{
+	    key: '_init_events',
+	    value: function _init_events(e) {
+
+	      e.addEventListener('keypress', function (e) {
+	        console.log(e.keyCode);
+	      });
+	    }
+	  }]);
+
+	  return Input;
+	}();
+
+	exports.default = Input;
 
 /***/ }
 /******/ ]);
