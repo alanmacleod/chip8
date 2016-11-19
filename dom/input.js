@@ -2,8 +2,10 @@ import log from 'loglevel';
 
 export default class Input
 {
+  // Note, the keystates are written direclty into the Chip8's BIOS/RAM
+  // for direct access by the CPU
 
-  constructor(element)
+  constructor(callback)
   {
     // 1 2 3 C
     // 4 5 6 D
@@ -16,6 +18,9 @@ export default class Input
     //   10:'z', :0'x', B:'c', f:'v'
     // ];
 
+    this.keyData = new Uint8Array(16);
+    this._callback = callback;
+
     this.keyMap = [
       'x', '1', '2', '3',
       'q', 'w', 'e', 'a',
@@ -23,24 +28,49 @@ export default class Input
       '4', 'r', 'f', 'v'
     ];
 
-    this._init(element);
+    this._init();
   }
 
-  _init(element)
+  _setKeyDown(key)
+  {
+      this.keyData[key] = 1;
+      if (this._callback) this._callback(this.keyData);
+  }
+
+  _setKeyUp(key)
+  {
+      this.keyData[key] = 0;
+      if (this._callback) this._callback(this.keyData);
+  }
+
+  _init()
   {
     //HACK: convert array into integer ascii codes for quicker lookup
     for (let k=0;k<this.keyMap.length;k++)
       this.keyMap[k] = this.keyMap[k].charCodeAt(0);
 
     window.addEventListener('keydown', (e) => {
-      log.warn(e.keyCode);
+      var code = String.fromCharCode(e.keyCode).toLowerCase().charCodeAt(0)
       for (let k=0; k<this.keyMap.length; k++)
       {
-        if (this.keyMap[k] == e.keyCode)
-          log.warn('Keypress '+k);
+        if (this.keyMap[k] == code)
+          this._setKeyDown(k);
+      }
+      //this.printTable();
+    }, true);
+
+    window.addEventListener('keyup', (e) => {
+      //log.warn();
+      var code = String.fromCharCode(e.keyCode).toLowerCase().charCodeAt(0)
+      for (let k=0; k<this.keyMap.length; k++)
+      {
+        if (this.keyMap[k] == code)
+          this._setKeyUp(k);
       }
     }, true);
 
   }
+
+
 
 }

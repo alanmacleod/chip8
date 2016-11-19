@@ -3,7 +3,6 @@ export default class Disassembler
 {
   constructor()
   {
-
   }
 
   decode(instr)
@@ -19,6 +18,16 @@ export default class Disassembler
     }
 
     return out;
+  }
+
+  explode(instr_data, from_instr, size)
+  {
+    let to_decode = [];
+    for (let t=from_instr-(size*2); t<=from_instr+(size*2); t+=2)
+    {
+      to_decode.push(instr_data.readWord(t));
+    }
+    return this.decode(to_decode);
   }
 
   _decode_single(instr)
@@ -59,9 +68,10 @@ export default class Disassembler
         case 0x8:
           switch (min2)
           {
-            case 0x1: return {m: `mov v${hex(min0)}, v${hex(min1)}`, d: "Move register into register"}; break;   // 8xy0
-            case 0x2: return {m: `or v${hex(min0)}, v${hex(min1)}`, d: "OR register with register"}; break;    // 8xy1
-            case 0x3: return {m: `and v${hex(min0)}, v${hex(min1)}`, d: "AND register with register"}; break;   // 8xy2
+            case 0x0: return {m: `mov v${hex(min0)}, v${hex(min1)}`, d: "Move register into register"}; break;   // 8xy0
+            case 0x1: return {m: `or v${hex(min0)}, v${hex(min1)}`, d: "OR register with register"}; break;    // 8xy1
+            case 0x2: return {m: `and v${hex(min0)}, v${hex(min1)}`, d: "AND register with register"}; break;   // 8xy2
+            case 0x3: return {m: `xor v${hex(min0)}, v${hex(min1)}`, d: "XOR register with register"}; break;   // 8xy2
             case 0x4: return {m: `add v${hex(min0)}, v${hex(min1)}`, d: "Add register to register"}; break;   // 8xy4
             case 0x5: return {m: `sub v${hex(min0)}, v${hex(min1)}`, d: "Subtract register from register"}; break;   // 8xy5
             case 0x6: return {m: `shr v${hex(min0)}`, d: "Shift right register"}; break;                  // 8x06

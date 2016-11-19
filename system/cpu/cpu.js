@@ -7,7 +7,7 @@ import DelayTimer         from '../timer-delay';
 
 const WORD_SIZE = 2; // 16-bit instruction
 const IP_INIT = 0x200; // = 512. Bytes 0-511 reserved for built-in interpreter
-const TRACE_BUFFER_SIZE = 20;  // store last 10 instructions
+const TRACE_BUFFER_SIZE = 10;  // store last 10 instructions
 
 export default class CPU extends Base
 {
@@ -17,6 +17,8 @@ export default class CPU extends Base
     this._this = "CPU"; // for context debugging
     this.gfx = gfx;
     this.ram = ram;
+    this.keyStateAddr = ram.getKeyboardBufferAddress();
+    log.debug("CPU Initialised");
 
     this._trace = new Array(TRACE_BUFFER_SIZE);
     this._trace_ptr = 0;
@@ -83,18 +85,22 @@ export default class CPU extends Base
     this._trace[this._trace_ptr++] = {i, a}
     if (this._trace_ptr == TRACE_BUFFER_SIZE)
       this._trace_ptr = 0;
+
+
   }
 
   _unroll_trace_loop()
   {
+    // Separate the instruction and address into separate
+    // arrays for easier passing to the disassembler
     let trace_unrolled = {i:[], a:[]};
-
+    //console.log("cpu this = ",this);
     let ip = this._trace_ptr;
     for (let p=0; p<TRACE_BUFFER_SIZE; p++)
     {
       //trace_unrolled.push(this._trace[ip])
-      trace_unrolled.a.push(this._trace[ip].a);
-      trace_unrolled.i.push(this._trace[ip].i)
+      trace_unrolled.a.push(this._trace[ip].a);  // address
+      trace_unrolled.i.push(this._trace[ip].i)   // instruction
       if (--ip < 0) ip = TRACE_BUFFER_SIZE-1;
     }
 
@@ -105,6 +111,7 @@ export default class CPU extends Base
 
   trace()
   {
+    //console.log(this._trace);
     return this._unroll_trace_loop();
   }
 

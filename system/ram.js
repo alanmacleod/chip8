@@ -3,6 +3,8 @@ import Base from '../util/base';
 
 const BIOS_CHAR_BASE_ADDR = 0x0;
 const BIOS_CHAR_SIZE = 5;
+const BIOS_NUM_CHARS = 16;
+const BIOS_KEYB_BASE_ADDR = (BIOS_CHAR_SIZE * BIOS_NUM_CHARS);
 
 export default class RAM extends Base
 {
@@ -27,6 +29,14 @@ export default class RAM extends Base
   getCharSizeBIOS()
   {
     return BIOS_CHAR_SIZE;
+  }
+
+  // Decided to write the keyboard buffer into system RAM
+  // instead of passing an additional Input() object to the CPU() class
+  // This is probably more like an embedded system would work
+  getKeyboardBufferAddress()
+  {
+    return BIOS_KEYB_BASE_ADDR;
   }
 
   readByte(addr)

@@ -1,21 +1,23 @@
 
 import log                from 'loglevel';
 
+const DISPLAY_WIDTH = 64, DISPLAY_HEIGHT = 32;
+
 export default class Renderer
 {
-  constructor(element, video, dimensions, scale=1)
+  constructor(element, scale=1)
   {
     this.element = element;
-    this.video = video;  // pixel buffer of the Chip8 system in bytes
+    //this.video = video;  // pixel buffer of the Chip8 system in bytes
 
-    this.scale = Math.floor(scale) || 1;
+    this.scale = Math.floor(Math.abs(scale)) || 1;
 
-    this.videodim = dimensions;
-    this.dim = {width: dimensions.width * this.scale, height: dimensions.height * this.scale };
+    //this.videodim = dimensions;
+    this.dim = {width: DISPLAY_WIDTH * this.scale, height: DISPLAY_HEIGHT * this.scale };
 
     this.renderContext = this.element.getContext("2d");
 
-    log.debug(`Video size ${this.video.length} bytes, width: ${this.dim.width}, height: ${this.dim.height}`);
+    //log.debug(`Video size ${this.video.length} bytes, width: ${this.dim.width}, height: ${this.dim.height}`);
     this.element.width = this.dim.width;
     this.element.height = this.dim.height;
 
@@ -34,29 +36,29 @@ export default class Renderer
         d[o+3]   = 255;
     }
 
-    this.dirty = false;
+    //this.dirty = false;
   }
 
   Dirty()
   {
-    this.dirty = true;
+    //this.dirty = true;
   }
 
-  Render()
+  Render(frameBuffer)
   {
-    if (!this.dirty) return;
+    //if (!this.dirty) return;
 
     var o = 0;
-    for (let y=0; y<this.videodim.height; y++)
+    for (let y=0; y<DISPLAY_HEIGHT; y++)
     {
-      for (let x=0; x<this.videodim.width; x++)
+      for (let x=0; x<DISPLAY_WIDTH; x++)
       {
-        let v = this.video[o++];
+        let v = frameBuffer[o++];
         let p = v ? this.pixel_on : this.pixel_off
         this.renderContext.putImageData(p, this.scale*x, this.scale*y);
       }
     }
-    this.dirty = false;
+    //this.dirty = false;
   }
 
 

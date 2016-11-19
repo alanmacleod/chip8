@@ -4,75 +4,57 @@ import CPU                from './system/cpu/cpu';
 import RAM                from './system/ram';
 import Loader             from './util/loader';
 import GFX                from './system/gfx';
-import Renderer           from './dom/renderer';
-import Input              from './dom/input';
 import log                from 'loglevel';
+import Input              from './dom/input';
 
 const BIOS_URL = "./bios.json";
 
 export default class Chip8 extends Base
 {
-  constructor(displayElement)
+  constructor()
   {
     super();
+    log.setLevel('debug');
 
-    log.setLevel('warn');
+    this.cycles = 50;
 
     this.ram = new RAM();
     this.gfx = new GFX(this.ram.data);
     this.cpu = new CPU(this.gfx, this.ram);
-    this.renderer = new Renderer(displayElement, this.gfx.display, this.gfx.size(), 10);
-    this.keyboard = new Input(displayElement);
 
     this.loader = new Loader();
+    this.cycleTimer = null;
 
-    this.ram.on('gpf', (function(data) {
-      this.emit('error', data);
-    }).bind(this)); // Override 'this' to use Chip8() context instead of RAM()'s
-
-    this.cpu.on('opcode', (function(data) {
-      data.trace = this.cpu.trace();
-      data.registers = this.cpu.dump_registers();
-      this.emit('error', data);
-    }).bind(this));
-
-    this.gfx.on('changed', (function() {
-        this.renderer.Dirty();
-    }).bind(this));
-
-    this.reset();
+    this._initEvents();
+    this._reset();
     this._init_bios();
     this._executing = false;
   }
 
-  frame()
+  cycle()
   {
-    if (!this._executing) return;
-
-    for (let t=0; t<10; t++)
+    for (let t=0; t<this.cycles; t++)
     {
       if (!this._executing) return;
-       this.cpu.execute(
-         this.cpu.decode(
-           this.cpu.fetch()
-         )
-       );
+      this.cpu.execute(
+        this.cpu.decode(
+          this.cpu.fetch()
+        )
+      )
     }
-
-    this.renderer.Render();
-
-    window.requestAnimationFrame((this.frame).bind(this));
   }
+
   poweron()
   {
     this._executing = true;
-    window.requestAnimationFrame((this.frame).bind(this));
+    this.cycleTimer = setInterval((this.cycle).bind(this), 1000/(60*2));
   }
 
   halt()
   {
     log.warn("Halting execution...");
     this._executing = false;
+    clearInterval(this.cycleTimer);
   }
 
   load(url, callback)
@@ -80,7 +62,7 @@ export default class Chip8 extends Base
     log.debug(`Fetching: '${url}'`);
 
     this.loader.load(url, (data) => {
-      log.info(`Loading title '${data.title}'`);
+      log.info(`Opening title '${data.title}'`);
 
       let buffer = this._base64ToArrayBuffer(data.binary);
       this.ram.blit(buffer, 512);
@@ -109,8 +91,9 @@ export default class Chip8 extends Base
 
   }
 
-  _base64ToArrayBuffer(base64) {
-    var binary_string =  window.atob(base64);
+  _base64ToArrayBuffer(base64)
+  {
+    var binary_string =  self.atob(base64);
     var len = binary_string.length;
 
     var bytes = new Uint8Array( len );
@@ -120,16 +103,55 @@ export default class Chip8 extends Base
     return bytes;
   }
 
-  reset()
+  _reset()
   {
     this.cpu.reset();
     this.ram.reset();
   }
 
-  _trace(size=10)
+  _initEvents()
   {
+    this.ram.on('gpf', (function(data) {
+      this.emit('error', data);
+    }).bind(this)); // Override 'this' to use Chip8() context instead of RAM()'s
 
+    this.cpu.on('opcode', (function(data) {
+      this.halt();
+      self.postMessage({
+        action: 'error',
+        args:{
+          trace: this.cpu.trace(),
+          registers: this.cpu.dump_registers(),
+          address: this.cpu.reg.ip
+        }
+      });
+    }).bind(this));
+
+    this.gfx.on('changed', (function() {
+        self.postMessage({
+          action: 'render',
+          args: {
+            frameBuffer: this.gfx.display
+          }
+        });
+    }).bind(this));
+
+    self.onmessage = (this.messageHandler).bind(this);
 
   }
+
+  messageHandler(msg)
+  {
+    switch(msg.data.action)
+    {
+      case 'input':
+        this.ram.blit(msg.data.args.keyState, this.ram.getKeyboardBufferAddress());
+        break;
+      case 'halt':
+        this.halt();
+        break;
+    }
+  }
+
 
 }
