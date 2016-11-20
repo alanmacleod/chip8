@@ -1,4 +1,4 @@
-import Chip8 from './chip8';
+import Chip8 from './system/chip8';
 
 let c = new Chip8();
 

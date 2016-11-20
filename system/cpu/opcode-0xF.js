@@ -25,7 +25,7 @@ $_instr_0xF[0x15] = function({major, minor}) // Fx15: set delay timer from Vx
 
 $_instr_0xF[0x18] = function({major, minor})
 {
-  this.fire('opcode', {error: `[ADDR 0x${this.reg.ip.toString(16)}] Illegal instruction: 0x${major.toString(16)}:${minor.toString(16)}`, address:this.reg.ip});
+  //this.fire('opcode', {error: `[ADDR 0x${this.reg.ip.toString(16)}] Illegal instruction: 0x${major.toString(16)}:${minor.toString(16)}`, address:this.reg.ip});
 }
 $_instr_0xF[0x1E] = function({major, minor})
 {
@@ -45,7 +45,7 @@ $_instr_0xF[0x30] = function({major, minor})
 
 $_instr_0xF[0x33] = function({major, minor}) // Fx33: bcd [i], Vx (store bcd of reg Vx at address reg i->i+2)
 {
-  let v = this.reg[(minor>>8)&0xf];
+  let v = this.reg.v[(minor>>8)&0xf];
   this.ram.data[this.reg.i+0] = Math.floor(v / 100);
   this.ram.data[this.reg.i+1] = Math.floor((v % 100) / 10);
   this.ram.data[this.reg.i+2] = (v % 10);

@@ -17,7 +17,7 @@ export default class Disassembler
       out.push(d);
     }
 
-    return out;
+    return out.length == 1 ? out[0] : out;
   }
 
   explode(instr_data, from_instr, size)
@@ -81,7 +81,7 @@ export default class Disassembler
           break;
         case 0x9: return {m: `jrn v${hex(min0)}, v${hex(min1)}`, d: "Jump over next instruction if register not equal"};             // 9xy0
           break;
-        case 0xA: return {m: `mov i, 0x${hex(minor)}`, d:"Move constant into Index register"};
+        case 0xA: return {m: `mov i, ${minor}`, d:"Move constant into Index register"};
           break;
         case 0xB: return {m: `jrl 0x${hex(minor)}`, d:"Jump to address given by constant + v0 register"}
           break;

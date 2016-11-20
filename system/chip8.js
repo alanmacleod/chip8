@@ -1,22 +1,26 @@
 
-import Base               from './util/base';
-import CPU                from './system/cpu/cpu';
-import RAM                from './system/ram';
-import Loader             from './util/loader';
-import GFX                from './system/gfx';
+import Base               from '../util/base';
+import Loader             from '../util/loader';
+import Input              from '../dom/input';
+import CPU                from './cpu/cpu';
+import RAM                from './ram';
+import GFX                from './gfx';
 import log                from 'loglevel';
-import Input              from './dom/input';
 
-const BIOS_URL = "./bios.json";
+import Disassembler       from './disasm';
+
+const BIOS_URL  = "./bios.json";
 
 export default class Chip8 extends Base
 {
   constructor()
   {
     super();
-    log.setLevel('debug');
+    log.setLevel('error');
 
-    this.cycles = 50;
+    this.disasm = new Disassembler();
+
+    this.cycles = 1;
 
     this.ram = new RAM();
     this.gfx = new GFX(this.ram.data);
@@ -33,12 +37,16 @@ export default class Chip8 extends Base
 
   cycle()
   {
+    //console.log("cycle"); return;
     for (let t=0; t<this.cycles; t++)
     {
       if (!this._executing) return;
+      let opcode = this.cpu.fetch();
+      //let d = this.disasm.decode(opcode);
+    //  log.debug(`[${this.cpu.reg.ip.toString(16)}] ${d.m}\t\t${d.d}`);
       this.cpu.execute(
         this.cpu.decode(
-          this.cpu.fetch()
+          opcode
         )
       )
     }
@@ -47,7 +55,7 @@ export default class Chip8 extends Base
   poweron()
   {
     this._executing = true;
-    this.cycleTimer = setInterval((this.cycle).bind(this), 1000/(60*2));
+    this.cycleTimer = setInterval((this.cycle).bind(this), 100);
   }
 
   halt()
@@ -55,6 +63,53 @@ export default class Chip8 extends Base
     log.warn("Halting execution...");
     this._executing = false;
     clearInterval(this.cycleTimer);
+  }
+
+  pausedump()
+  {
+    this._executing = false;
+    this._dump();
+  }
+
+  step()
+  {
+    this._executing = false;
+
+    let opcode = this.cpu.fetch();
+    let d = this.disasm.decode(opcode);
+    log.debug(`[${this.cpu.reg.ip.toString(16)}] ${d.m}\t\t${d.d}`);
+    this.cpu.execute(
+      this.cpu.decode(
+        opcode
+      )
+    )
+
+    this._dump();
+  }
+
+  resume()
+  {
+    this._executing = true;
+  }
+
+  haltdump()
+  {
+    this.halt();
+    this._dump();
+  }
+
+  _dump()
+  {
+    let s = '';
+
+    for (let t=0,{v}=this.cpu.reg; t<v.length; t++)
+    {
+      s += `v${t.toString(16)}=${v[t]}`;
+      s += t<v.length-1 ? ', ' : '';
+    }
+
+    log.warn(s);
+    log.warn(`i=${this.cpu.reg.i}, vf=${this.cpu.reg.vf}, ip=0x${this.cpu.reg.ip.toString(16)}`);
   }
 
   load(url, callback)
@@ -115,11 +170,16 @@ export default class Chip8 extends Base
       this.emit('error', data);
     }).bind(this)); // Override 'this' to use Chip8() context instead of RAM()'s
 
+    this.cpu.on('debug', (function(data) {
+      this._executing = false;
+    }).bind(this));
+
     this.cpu.on('opcode', (function(data) {
       this.halt();
       self.postMessage({
         action: 'error',
         args:{
+          error: data.error,
           trace: this.cpu.trace(),
           registers: this.cpu.dump_registers(),
           address: this.cpu.reg.ip
@@ -137,7 +197,6 @@ export default class Chip8 extends Base
     }).bind(this));
 
     self.onmessage = (this.messageHandler).bind(this);
-
   }
 
   messageHandler(msg)
@@ -147,8 +206,17 @@ export default class Chip8 extends Base
       case 'input':
         this.ram.blit(msg.data.args.keyState, this.ram.getKeyboardBufferAddress());
         break;
-      case 'halt':
-        this.halt();
+      case 'pause':
+        this.pausedump();
+        break;
+      case 'resume':
+        this.resume();
+        break;
+      case 'haltdump':
+        this.haltdump();
+        break;
+      case 'step':
+        this.step();
         break;
     }
   }

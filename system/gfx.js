@@ -1,5 +1,6 @@
 
-import Base from '../util/base';
+import Base   from '../util/base';
+import log    from 'loglevel';
 
 const WIDTH = 64, HEIGHT = 32;
 const SPRITE_WIDTH = 8;
@@ -38,7 +39,7 @@ export default class GFX extends Base
         pixel = ((bit_row >> x) & 0x1);    //TODO: *MUST* be a smarter way to write this!!
         xor_pixel = this.display[o] ^ pixel;
         this.display[o++] = xor_pixel;
-        if (xor_pixel!=pixel) collision = 1;
+        if ((xor_pixel!=pixel) && xor_pixel == 0) collision = 1;
       }
       o += d;
     }
@@ -56,7 +57,7 @@ export default class GFX extends Base
     // }
 
     this.fire('changed');
-
+    if (collision ==1 ) log.info("*** Collision! ***");
     return collision;
   }
 
