@@ -16,7 +16,7 @@ export default class Chip8 extends Base
   constructor()
   {
     super();
-    log.setLevel('error');
+    log.setLevel('debug');
 
     this.disasm = new Disassembler();
 
@@ -55,7 +55,7 @@ export default class Chip8 extends Base
   poweron()
   {
     this._executing = true;
-    this.cycleTimer = setInterval((this.cycle).bind(this), 16);
+    this.cycleTimer = setInterval((this.cycle).bind(this), 10);
   }
 
   halt()

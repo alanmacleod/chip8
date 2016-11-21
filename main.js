@@ -5,7 +5,7 @@ import Renderer           from './dom/renderer';
 import Input              from './dom/input';
 import EmulationWorker    from 'worker-loader!./chip8-worker.js';
 
-const DISPLAY_SCALE = 16;
+const DISPLAY_SCALE = 10;
 
 let btnHalt   = document.getElementById('btnstopdump');
 let btnPause  = document.getElementById('btnpause');
@@ -23,7 +23,7 @@ let emuWorker = new EmulationWorker();
 emuWorker.addEventListener('message', (message) => {
   switch(message.data.action)
   {
-    case 'render':      
+    case 'render':
       renderer.Render(message.data.args.frameBuffer);
       break;
     case 'error':
