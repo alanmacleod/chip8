@@ -17,6 +17,7 @@ export default class Chip8 extends Base
   {
     super();
     log.setLevel('debug');
+    log.debug("Test");
 
     this.disasm = new Disassembler();
 

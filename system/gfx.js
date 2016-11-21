@@ -57,7 +57,7 @@ export default class GFX extends Base
     // }
 
     this.fire('changed');
-    if (collision ==1 ) log.info("*** Collision! ***");
+    //if (collision ==1 ) log.info("*** Collision! ***");
     return collision;
   }
 
