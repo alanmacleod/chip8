@@ -55,7 +55,7 @@ export default class Chip8 extends Base
   poweron()
   {
     this._executing = true;
-    this.cycleTimer = setInterval((this.cycle).bind(this), 100);
+    this.cycleTimer = setInterval((this.cycle).bind(this), 16);
   }
 
   halt()

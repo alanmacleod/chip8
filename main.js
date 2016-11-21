@@ -23,8 +23,7 @@ let emuWorker = new EmulationWorker();
 emuWorker.addEventListener('message', (message) => {
   switch(message.data.action)
   {
-    case 'render':
-      //console.log(message.data.args.frameBuffer);
+    case 'render':      
       renderer.Render(message.data.args.frameBuffer);
       break;
     case 'error':
