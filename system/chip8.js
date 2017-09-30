@@ -42,12 +42,12 @@ export default class Chip8 extends Base
     for (let t=0; t<this.cycles; t++)
     {
       if (!this._executing) return;
-      let opcode = this.cpu.fetch();
+      //let opcode = ;
       //let d = this.disasm.decode(opcode);
-    //  log.debug(`[${this.cpu.reg.ip.toString(16)}] ${d.m}\t\t${d.d}`);
+      //  log.debug(`[${this.cpu.reg.ip.toString(16)}] ${d.m}\t\t${d.d}`);
       this.cpu.execute(
         this.cpu.decode(
-          opcode
+          this.cpu.fetch()
         )
       )
     }

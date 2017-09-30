@@ -5,7 +5,8 @@
   "main": "core.js",
   "scripts": {
     "olddev": "node ./build/bundle.js",
-    "start": "webpack-dev-server --content-base build --inline"
+    "start": "webpack-dev-server --content-base build --inline",
+    "build": "webpack -c"
   },
   "author": "",
   "license": "ISC",
