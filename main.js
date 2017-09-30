@@ -5,7 +5,7 @@ import Renderer           from './dom/renderer';
 import Input              from './dom/input';
 import EmulationWorker    from 'worker-loader!./chip8-worker.js';
 
-const DISPLAY_SCALE = 15;
+const DISPLAY_SCALE = 10;
 
 let btnHalt   = document.getElementById('btnstopdump');
 let btnPause  = document.getElementById('btnpause');
